@@ -11,10 +11,10 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import static java.time.LocalDateTime.now;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Component
 public class CustomAccesDeniedHandler implements AccessDeniedHandler {

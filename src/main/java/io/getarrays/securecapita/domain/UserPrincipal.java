@@ -16,6 +16,11 @@ public class UserPrincipal implements UserDetails {
     private final User user;
     private final String permissions;
 
+   /* public UserPrincipal(User user, String permissions) {
+        this.user = user;
+        this.permissions = permissions;
+    }*/
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return stream(permissions.split(",".trim())).map(SimpleGrantedAuthority::new).collect(toList());

@@ -30,6 +30,7 @@ import java.util.UUID;
 import static io.getarrays.securecapita.enumeration.RoleType.ROLE_USER;
 import static io.getarrays.securecapita.enumeration.VerificationType.ACCOUNT;
 import static io.getarrays.securecapita.query.UserQuery.*;
+import static java.util.Map.of;
 import static java.util.Objects.requireNonNull;
 
 @Repository
@@ -126,6 +127,13 @@ public class UserRepositoryImplementation implements UserRepository<User>, UserD
 
         }else {
             log.info("User found in the database: {}", email);
+          /*  UserPrincipal userPrincipal = new UserPrincipal(user,roleRepository.getRoleByUserId(user.getId()).getPermission());
+            return new org.springframework.security.core.userdetails.User(
+                    user.getEmail(),
+                    user.getPassword(),
+                    userPrincipal.getAuthorities()
+            );*/
+
             return new UserPrincipal(user,roleRepository.getRoleByUserId(user.getId()).getPermission());
         }
     }
@@ -133,16 +141,13 @@ public class UserRepositoryImplementation implements UserRepository<User>, UserD
     @Override
     public User getUserByEmail(String email) {
         try {
-
-            User user = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, Map.of("email",email), new UserRowMapper());
+            User user = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, of("email", email), new UserRowMapper());
             return user;
-        }catch (EmptyResultDataAccessException exception){
-            throw new ApiException("No User found by email: "+ email);
-
-        }catch (Exception exception){
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("No User found by email: " + email);
+        } catch (Exception exception) {
             log.error(exception.getMessage());
-            throw new ApiException("An error occured. Please try again");
-
+            throw new ApiException("An error occurred. Please try again.");
         }
     }
 }
