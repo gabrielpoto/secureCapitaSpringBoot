@@ -24,7 +24,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private static final String[] PUBLIC_URLS = { "/user/**" };
+    private static final String[] PUBLIC_URLS = { "/user/**", "/user/verify/code/**" };
     private final BCryptPasswordEncoder encoder;
     private final CustomAccesDeniedHandler customAccesDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;

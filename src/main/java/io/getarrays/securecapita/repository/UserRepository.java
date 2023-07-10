@@ -1,6 +1,7 @@
 package io.getarrays.securecapita.repository;
 
 import io.getarrays.securecapita.domain.User;
+import io.getarrays.securecapita.dto.UserDTO;
 
 import java.util.Collection;
 
@@ -16,4 +17,7 @@ public interface UserRepository <T extends User>{
     /*MORE complex operation*/
     User getUserByEmail(String email);
 
+    void sendVerificationCode(UserDTO user);
+
+    User verifyCode(String email, String code);
 }
