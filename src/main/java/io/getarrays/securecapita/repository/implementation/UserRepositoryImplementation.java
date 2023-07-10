@@ -32,6 +32,7 @@ import java.util.UUID;
 import static io.getarrays.securecapita.enumeration.RoleType.ROLE_USER;
 import static io.getarrays.securecapita.enumeration.VerificationType.ACCOUNT;
 import static io.getarrays.securecapita.query.UserQuery.*;
+import static io.getarrays.securecapita.query.UserQuery.SELECT_CODE_EXPIRATION_QUERY;
 import static io.getarrays.securecapita.utils.SmsUtils.sendSMS;
 import static java.util.Map.of;
 import static java.util.Objects.requireNonNull;
@@ -162,6 +163,8 @@ public class UserRepositoryImplementation implements UserRepository<User>, UserD
 
     @Override
     public User verifyCode(String email, String code) {
+        if(isVerificationCodeExpired(code)) throw new ApiException("This code has expired. Please login again.");
+
         try {
             User userByCode = jdbc.queryForObject(SELECT_USER_BY_USER_CODE_QUERY, Map.of("code", code), new UserRowMapper());
             User userByEmail = jdbc.queryForObject(SELECT_USER_BY_EMAIL_QUERY, Map.of("email", email), new UserRowMapper());
@@ -181,6 +184,15 @@ public class UserRepositoryImplementation implements UserRepository<User>, UserD
         }
     }
 
+    private Boolean isVerificationCodeExpired(String code) {
+        try {
+            return jdbc.queryForObject(SELECT_CODE_EXPIRATION_QUERY, of("code", code), Boolean.class);
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("This code is not valid. Please login again.");
+        } catch (Exception exception) {
+            throw new ApiException("An error occurred. Please try again.");
+        }
+    }
 
 
     private SqlParameterSource getParametersSource(User user) {

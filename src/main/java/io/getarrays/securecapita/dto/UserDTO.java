@@ -1,12 +1,14 @@
 package io.getarrays.securecapita.dto;
 
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@Setter
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserDTO {
-
     private Long id;
     private String firstName;
     private String lastName;
@@ -20,5 +22,7 @@ public class UserDTO {
     private boolean isNotLocked;
     private boolean isUsingMfa;
     private LocalDateTime created_at;
+    private String roleName;
+    private String permissions;
 
 }

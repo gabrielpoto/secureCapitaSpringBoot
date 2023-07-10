@@ -1,12 +1,12 @@
 package io.getarrays.securecapita.dtomapper;
 
 import com.fasterxml.jackson.databind.util.BeanUtil;
+import io.getarrays.securecapita.domain.Role;
 import io.getarrays.securecapita.domain.User;
 import io.getarrays.securecapita.dto.UserDTO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
-@Component
 public class UserDTOMapper {
     public static UserDTO fromUser(User user){
         UserDTO userDTO = new UserDTO();
@@ -14,6 +14,13 @@ public class UserDTOMapper {
         return userDTO;
     }
 
+    public static UserDTO fromUser(User user, Role role) {
+        UserDTO userDTO = new UserDTO();
+        BeanUtils.copyProperties(user, userDTO);
+        userDTO.setRoleName(role.getName());
+        userDTO.setPermissions(role.getPermission());
+        return userDTO;
+    }
 
     public static User toUser(UserDTO userDTO){
         User user = new User();

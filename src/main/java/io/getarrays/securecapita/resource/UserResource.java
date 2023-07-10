@@ -21,6 +21,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.Map;
 
+import static io.getarrays.securecapita.dtomapper.UserDTOMapper.toUser;
 import static java.time.LocalDateTime.now;
 
 @RestController
@@ -95,7 +96,7 @@ public class UserResource {
     }
 
     private UserPrincipal getUserprincipal(UserDTO user) {
-        return new UserPrincipal(userService.getUser(user.getEmail()), roleService.getRoleByUserId(user.getId()).getPermission());
+        return new UserPrincipal(toUser(userService.getUserByEmail(user.getEmail())), roleService.getRoleByUserId(user.getId()).getPermission());
     }
 
     private ResponseEntity<HttpResponse> sendVerificationCode(UserDTO user) {
