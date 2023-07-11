@@ -8,6 +8,7 @@ import io.getarrays.securecapita.form.LoginForm;
 import io.getarrays.securecapita.provider.TokenProvider;
 import io.getarrays.securecapita.service.RoleService;
 import io.getarrays.securecapita.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -73,6 +74,19 @@ public class UserResource {
                         .message("Profile Retrieved")
                         .status(HttpStatus.OK)
                         .statusCode(HttpStatus.OK.value())
+                        .build());
+    }
+
+
+    @RequestMapping ("/error")
+    public ResponseEntity<HttpResponse> handleError(HttpServletRequest request){
+
+        return ResponseEntity.badRequest().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .reason("There is no mapping for a " + request.getMethod() + " request for this path on the server")
+                        .status(HttpStatus.BAD_REQUEST)
+                        .statusCode(HttpStatus.BAD_REQUEST.value())
                         .build());
     }
 

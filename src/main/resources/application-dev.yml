@@ -1,6 +1,12 @@
 jwt:
   secret: mysupercomplexesecret
 
+server:
+  error:
+    path: /user/error
+    witheLabel:
+      enabled: false
+
 spring:
  # autoconfigure:
  #   exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration

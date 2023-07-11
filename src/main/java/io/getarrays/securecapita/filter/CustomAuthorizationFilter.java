@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import static io.getarrays.securecapita.utils.ExceptionUtils.processError;
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -52,7 +53,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
         }catch (Exception exception) {
             log.error(exception.getMessage());
-            //processError(request,response,exception);
+            processError(request,response,exception);
         }
     }
 
