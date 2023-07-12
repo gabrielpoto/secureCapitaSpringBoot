@@ -97,7 +97,7 @@ CREATE TABLE AccountVerifications
 
 DROP TABLE IF EXISTS ResetPassewordVerifications;
 
-CREATE TABLE ResetPassewordVerifications
+CREATE TABLE ResetPasswordVerifications
 (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL,

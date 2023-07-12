@@ -4,11 +4,13 @@ import io.getarrays.securecapita.domain.HttpResponse;
 import io.getarrays.securecapita.domain.User;
 import io.getarrays.securecapita.domain.UserPrincipal;
 import io.getarrays.securecapita.dto.UserDTO;
+import io.getarrays.securecapita.exception.ApiException;
 import io.getarrays.securecapita.form.LoginForm;
 import io.getarrays.securecapita.provider.TokenProvider;
 import io.getarrays.securecapita.service.RoleService;
 import io.getarrays.securecapita.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +26,10 @@ import java.net.URI;
 import java.util.Map;
 
 import static io.getarrays.securecapita.dtomapper.UserDTOMapper.toUser;
+import static io.getarrays.securecapita.utils.ExceptionUtils.processError;
 import static java.time.LocalDateTime.now;
+import static java.util.Map.of;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.unauthenticated;
 
 @RestController
@@ -35,14 +40,22 @@ public class UserResource {
     private final RoleService roleService;
     private final AuthenticationManager authenticationManager;
     private final TokenProvider tokenProvider;
+    private final HttpServletRequest request;
+    private final HttpServletResponse response;
 
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
-        authenticationManager.authenticate(unauthenticated(loginForm.getEmail(), loginForm.getPassword()));
-        UserDTO user = userService.getUserByEmail(loginForm.getEmail());
+        Authentication authentication = authenticationManager.authenticate(unauthenticated(loginForm.getEmail(), loginForm.getPassword()));
+        UserDTO user = getAuthenticationuser(authentication);
         return user.isUsingMfa() ? sendVerificationCode(user) : sendResponse(user);
 
     }
+
+    private UserDTO getAuthenticationuser(Authentication authentication){
+        return ((UserPrincipal) authentication.getPrincipal()).getUser();
+    }
+
+
 
 
 
@@ -60,25 +73,63 @@ public class UserResource {
                         .build());
     }
 
-    @GetMapping ("/profile")
-    public ResponseEntity<HttpResponse> profile(Authentication authentication){
-
+    @GetMapping("/profile")
+    public ResponseEntity<HttpResponse> profile(Authentication authentication) {
         UserDTO user = userService.getUserByEmail(authentication.getName());
-        System.out.println(authentication.getPrincipal());
         return ResponseEntity.ok().body(
                 HttpResponse.builder()
                         .timeStamp(now().toString())
-                        .data(Map.of(
-                                "user", user
-                        ))
+                        .data(of("user", user))
                         .message("Profile Retrieved")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    @GetMapping ("/resetPassword/{email}")
+
+    public ResponseEntity<HttpResponse> resetPassword(@PathVariable("email") String email){
+
+        userService.resetPassword(email);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Email sent. Please check your email to reset your password.")
                         .status(HttpStatus.OK)
                         .statusCode(HttpStatus.OK.value())
                         .build());
     }
 
 
-    @RequestMapping ("/error")
+    @GetMapping("/verify/password/{key}")
+    public ResponseEntity<HttpResponse> verifyPasswordUrl(@PathVariable("key") String key) {
+        UserDTO user = userService.verifyPasswordKey(key);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .data(of("user", user))
+                        .message("Please enter a new password")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    @PostMapping("/resetPassword/{key}/{password}/{confirmPassword}")
+    public ResponseEntity<HttpResponse> resetPasswordWithKey(@PathVariable("key") String key, @PathVariable("password") String password,
+                                                             @PathVariable("confirmPassword") String confirmPassword) {
+        userService.renewPassword(key, password, confirmPassword);
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message("Password reset successfully")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+
+
+ /*   @RequestMapping ("/error")
     public ResponseEntity<HttpResponse> handleError(HttpServletRequest request){
 
         return ResponseEntity.badRequest().body(
@@ -88,6 +139,18 @@ public class UserResource {
                         .status(HttpStatus.BAD_REQUEST)
                         .statusCode(HttpStatus.BAD_REQUEST.value())
                         .build());
+    }
+*/
+
+    private Authentication authenticate (String email, String password){
+        try {
+            Authentication authentication = authenticationManager.authenticate(unauthenticated(email,password));
+            return authentication;
+        }catch (Exception exception){
+            processError(request, response, exception);
+            throw new ApiException(exception.getMessage());
+        }
+
     }
 
 
@@ -129,7 +192,7 @@ public class UserResource {
     }
 
     private UserPrincipal getUserprincipal(UserDTO user) {
-        return new UserPrincipal(toUser(userService.getUserByEmail(user.getEmail())), roleService.getRoleByUserId(user.getId()).getPermission());
+        return new UserPrincipal(toUser(userService.getUserByEmail(user.getEmail())), roleService.getRoleByUserId(user.getId()));
     }
 
     private ResponseEntity<HttpResponse> sendVerificationCode(UserDTO user) {
@@ -143,4 +206,7 @@ public class UserResource {
                         .statusCode(HttpStatus.OK.value())
                         .build());
     }
+
+
+
 }

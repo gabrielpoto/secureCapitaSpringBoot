@@ -108,9 +108,9 @@ public class HandleException extends ResponseEntityExceptionHandler implements E
                         .timeStamp(now().toString())
                         .reason(exception.getMessage().contains("except 1, actual 0") ? "Record not found" : exception.getMessage())
                         .developerMessage(exception.getMessage())
-                        .status(INTERNAL_SERVER_ERROR)
-                        .statusCode(INTERNAL_SERVER_ERROR.value())
-                        .build(), INTERNAL_SERVER_ERROR);
+                        .status(BAD_REQUEST)
+                        .statusCode(BAD_REQUEST.value())
+                        .build(), BAD_REQUEST);
     }
 
     @ExceptionHandler(EmptyResultDataAccessException.class)
