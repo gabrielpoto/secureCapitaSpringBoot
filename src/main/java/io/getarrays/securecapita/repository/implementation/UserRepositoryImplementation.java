@@ -185,6 +185,9 @@ public class UserRepositoryImplementation implements UserRepository<User>, UserD
         }
     }
 
+    // -------- START RESET PASSWORD FUNCTIONALITY -----//
+
+
     @Override
     public void resetPassword(String email) {
         if(getEmailCount(email.trim().toLowerCase()) <= 0) throw new ApiException("There is no account for this email address.");
@@ -225,6 +228,21 @@ public class UserRepositoryImplementation implements UserRepository<User>, UserD
             jdbc.update(DELETE_VERIFICATION_BY_URL_QUERY, of("url", getVerificationUrl(key, PASSWORD.getType())));
         } catch (Exception exception) {
             log.error(exception.getMessage());
+            throw new ApiException("An error occurred. Please try again.");
+        }
+    }
+
+    // -------- END RESET PASSWORD FUNCTIONALITY -----//
+
+    @Override
+    public User verifyAccountKey(String key) {
+        try {
+            User user =  jdbc.queryForObject(SELECT_USER_BY_ACCOUNT_URL_QUERY, of("url", getVerificationUrl(key, ACCOUNT.getType())), new UserRowMapper());
+            jdbc.update(UPDATE_USER_ENABLED_QUERY, Map.of("enabled", true, "id", user.getId()));
+            return user;
+        } catch (EmptyResultDataAccessException exception) {
+            throw new ApiException("This link is not not valid ");
+        } catch (Exception exception) {
             throw new ApiException("An error occurred. Please try again.");
         }
     }

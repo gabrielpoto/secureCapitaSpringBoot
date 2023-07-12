@@ -29,6 +29,8 @@ import static io.getarrays.securecapita.dtomapper.UserDTOMapper.toUser;
 import static io.getarrays.securecapita.utils.ExceptionUtils.processError;
 import static java.time.LocalDateTime.now;
 import static java.util.Map.of;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.security.authentication.UsernamePasswordAuthenticationToken.unauthenticated;
 
@@ -42,6 +44,9 @@ public class UserResource {
     private final TokenProvider tokenProvider;
     private final HttpServletRequest request;
     private final HttpServletResponse response;
+
+    private static final String TOKEN_PREFIX = "Bearer ";
+
 
     @PostMapping("/login")
     public ResponseEntity<HttpResponse> login(@RequestBody @Valid LoginForm loginForm){
@@ -129,6 +134,66 @@ public class UserResource {
 
 
 
+
+    @GetMapping("/verify/account/{key}")
+    public ResponseEntity<HttpResponse> verifyAccount(@PathVariable("key") String key) {
+        return ResponseEntity.ok().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .message(userService.verifyAccountKey(key).isEnabled() ? "Account already verified" : "Account verified")
+                        .status(OK)
+                        .statusCode(OK.value())
+                        .build());
+    }
+
+    @GetMapping("/refresh/token")
+    public ResponseEntity<HttpResponse> refreshToken(HttpServletRequest request ) {
+        if(isHeaderAndTokenValid(request)){
+            String token  = request.getHeader(AUTHORIZATION).substring(TOKEN_PREFIX.length());
+            UserDTO user   = userService.getUserByEmail(tokenProvider.getSubject(token, request));
+            return ResponseEntity.ok().body(
+                    HttpResponse.builder()
+                            .timeStamp(now().toString())
+                            .data(Map.of(
+                                    "user", user,
+                                    "access_token", tokenProvider.createAccessToken(getUserprincipal(user)),
+                                    "refresh_token", token
+                            ))
+                            .message("Token Refresh")
+                            .status(OK)
+                            .statusCode(OK.value())
+                            .build());
+        }else {
+            return ResponseEntity.badRequest().body(
+                    HttpResponse.builder()
+                            .timeStamp(now().toString())
+                            .reason(" Refresh Token missing or invalid")
+                            .developerMessage(" Refresh Token missing or invalid")
+                            .status(BAD_REQUEST)
+                            .statusCode(BAD_REQUEST.value())
+                            .build());
+
+        }
+
+
+
+    }
+
+
+
+    @RequestMapping ("/error")
+    public ResponseEntity<HttpResponse> handleError(HttpServletRequest request){
+
+        return ResponseEntity.badRequest().body(
+                HttpResponse.builder()
+                        .timeStamp(now().toString())
+                        .reason("There is no mapping for a " + request.getMethod() + " request for this path on the server")
+                        .status(HttpStatus.BAD_REQUEST)
+                        .statusCode(HttpStatus.BAD_REQUEST.value())
+                        .build());
+    }
+
+
  /*   @RequestMapping ("/error")
     public ResponseEntity<HttpResponse> handleError(HttpServletRequest request){
 
@@ -205,6 +270,16 @@ public class UserResource {
                         .status(HttpStatus.OK)
                         .statusCode(HttpStatus.OK.value())
                         .build());
+    }
+
+
+
+    private boolean isHeaderAndTokenValid(HttpServletRequest request) {
+        return request.getHeader(AUTHORIZATION) != null && request.getHeader(AUTHORIZATION).startsWith(TOKEN_PREFIX)
+                && tokenProvider.isTokenValid(
+                        tokenProvider.getSubject(request.getHeader(AUTHORIZATION).substring(TOKEN_PREFIX.length()), request),
+                        request.getHeader(AUTHORIZATION).substring(TOKEN_PREFIX.length())
+                );
     }
 
 
